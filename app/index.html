@@ -33,7 +33,6 @@
   <button id="toggle">▶ Start</button>
   <select id="mic"></select>
   <select id="spk"></select>
-  <button id="serialBtn">Connect servo (optional)</button>
 </div>
 <div id="log"></div>
 <div id="actuator"><div id="actuatorText">WAVE</div></div>
@@ -182,14 +181,6 @@ function stop(msg) {
 }
 $('toggle').onclick = () => running ? stop() : start();
 $('spk').onchange = applySpeaker;
-$('serialBtn').onclick = async () => {
-  try {
-    serialPort = await navigator.serial.requestPort();
-    await serialPort.open({ baudRate: 9600 });
-    serialWriter = serialPort.writable.getWriter();
-    $('serialBtn').textContent = 'Servo connected ✓';
-  } catch { $('serialBtn').textContent = 'Connect servo (optional)'; }
-};
 listMics();
 </script>
 </body>

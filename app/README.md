@@ -14,7 +14,7 @@ Then open **http://localhost:8787** in Chrome:
 
 1. The mic list auto-selects the **ReSpeaker** when it is plugged in (USB).
 2. Click **▶ Start** and allow microphone access.
-3. Speak: talk to the agent — and try **"wave"**, **"turn left"**, **"turn right"**, **"dance"**, **"stop"**. The agent answers by voice and the action fires full-screen (and on the servo, if one is connected via the optional serial button).
+3. Speak: talk to the agent — and try **"wave"**, **"turn left"**, **"turn right"**, **"dance"**, **"stop"**. The agent answers by voice and the action fires full-screen.
 
 ## How credentials work
 
