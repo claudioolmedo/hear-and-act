@@ -18,7 +18,7 @@ Then open **http://localhost:8787** in Chrome:
 
 ## How credentials work
 
-No setup needed on Claudio's Mac: `server.js` reads `ASSEMBLYAI_API_KEY` and `AGENT_ID_MINIMAL` automatically from the Ferbly credential store (`~/Library/Application Support/Assembly + Ferbly/credentials.env`, fallback: the Ferbly project's `furby/.env`). The key is used only on this machine to mint a 60-second session token — it never reaches the browser and is never committed. On any other machine, copy `.env.example` to `.env` and fill it in locally.
+No setup needed on Claudio's Mac: `server.js` reads `ASSEMBLYAI_API_KEY` and `AGENT_ID_MINIMAL` automatically from the local credential store of the earlier workshop project (the server auto-discovers the `credentials.env` in that project's application-support folder; fallback: the `.env` in the project folder). The key is used only on this machine to mint a 60-second session token — it never reaches the browser and is never committed. On any other machine, copy `.env.example` to `.env` and fill it in locally.
 
 ## Demo checklist
 

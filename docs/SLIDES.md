@@ -10,7 +10,7 @@ Track: **Multi-Modal Agents**
 
 **Team: Hear & Act**
 
-- **Claudio Olmedo** — Founder, One Dollar Computer. 12 years building accessible computing and physical AI. Built a working voice agent ("Assembly + Ferbly") at the AssemblyAI hardware workshop and REM PhysicalAI, an offline physical-AI system, at the ExecuTorch Hackathon.
+- **Claudio Olmedo** — Founder, One Dollar Computer. 12 years building accessible computing and physical AI. Built a working voice agent at the AssemblyAI hardware workshop and REM PhysicalAI, an offline physical-AI system, at the ExecuTorch Hackathon.
 - **[TEAMMATE 1 — name]** — [background: school / company / role, 1 line]
 - **[TEAMMATE 2 — name]** — [background, 1 line] *(delete lines not used; team of 2 is fine)*
 
@@ -30,7 +30,7 @@ Repo: https://github.com/claudioolmedo/hear-and-act
 **Modalities used:** voice/audio in → speech understanding + LLM reasoning → synthesized voice out → physical actuation.
 
 **Built with the sponsors:** AssemblyAI (voice agent), Keenable (live web knowledge), Nebius Token Factory (inference credits).
-Built on the AssemblyAI Voice Agent API (the same stack proven in the Ferbly project); local app, real-time WebSocket audio.
+Built on the AssemblyAI Voice Agent API (the same stack already proven live at AssemblyAI's workshop); local app, real-time WebSocket audio.
 
 ---
 

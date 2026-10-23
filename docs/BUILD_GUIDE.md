@@ -6,7 +6,7 @@
 
 **Hear & Act** — think of it as **an open-source Alexa you can build and teach**: a local app where a person talks to a voice agent, the agent converses back by voice, understands a command, and **acts in the physical world** (a servo device moves; an on-screen actuator shows the action when no hardware is attached).
 
-It is a hackathon demo (Beta Fund × AWS × OpenAI Multi-Model Hackathon, Oct 23, 2026) built on the AssemblyAI Voice Agent API, reusing the proven architecture of the **Ferbly** project that already exists on this Mac. Everything you produce lives in this repository.
+It is a hackathon demo (Beta Fund × AWS × OpenAI Multi-Model Hackathon, Oct 23, 2026) built on the AssemblyAI Voice Agent API, reusing a proven architecture that already ran live on this Mac at the AssemblyAI hardware workshop. Everything you produce lives in this repository.
 
 ## 1. Hardware and prerequisites
 
@@ -14,16 +14,16 @@ It is a hackathon demo (Beta Fund × AWS × OpenAI Multi-Model Hackathon, Oct 23
 - **ReSpeaker XVF3800 USB 4-Mic Array** (Seeed Studio) — preferred microphone/speaker. Connect by USB. In the browser/app it appears as an audio device whose name contains **"respeaker"** (XMOS firmware). If absent, fall back to the default mic/speaker — the demo must still work.
 - **Optional actuator hardware:** a servo device on USB serial (e.g., an Arduino-class board). Optional — the on-screen actuator is the guaranteed path; serial must never block the demo.
 - **Software:** Node.js 18+ and a Chromium-based browser. No build step if avoidable.
-- **Reference implementation on this machine:** the Ferbly project folder `~/Documents/ChatGPT/Hardware hackathon - turn a vintage toy into a voice agent/` (Electron app + handoff doc `FERBLY_HANDOFF_COMPLETO.md`). It already speaks the exact protocol below — mirror its protocol handling.
+- **Reference implementation on this machine:** the earlier workshop project folder `~/Documents/ChatGPT/Hardware hackathon - turn a vintage toy into a voice agent/` (Electron app + its handoff document). It already speaks the exact protocol below — mirror its protocol handling.
 
 ## 2. Credentials — read the rules twice
 
-- The AssemblyAI API key lives **only** in the local credential store of the Ferbly project:
-  - Primary: `~/Library/Application Support/Assembly + Ferbly/credentials.env` (permissions 0600) — variables include `ASSEMBLYAI_API_KEY` and `AGENT_ID_MINIMAL`.
-  - Fallback: `furby/.env` inside the Ferbly project folder.
+- The AssemblyAI API key lives **only** in the local credential store of the earlier workshop project:
+  - Primary: the `credentials.env` (permissions 0600) in that project's application-support folder — variables include `ASSEMBLYAI_API_KEY` and `AGENT_ID_MINIMAL`. The demo server auto-discovers it.
+  - Fallback: the `.env` inside the workshop project folder.
 - **Read-only.** Never modify those files. Never print, log, screenshot, or commit the key or any session token. Never send the key to the browser — the local server uses it to mint a short-lived token (step 4.1) and only the token goes to the page.
 - `.env` / `credentials.env` are git-ignored in this repo. Keep it that way.
-- If a new agent must be published for the action behavior, publish a **new** agent and keep its id in a local uncommitted note. Never overwrite or reconfigure the existing Ferbly agent.
+- If a new agent must be published for the action behavior, publish a **new** agent and keep its id in a local uncommitted note. Never overwrite or reconfigure the existing agent.
 
 ## 3. Architecture
 
@@ -44,7 +44,7 @@ ReSpeaker / mic ──► local web app (browser, localhost)
 
 ## 4. Protocol reference (AssemblyAI Voice Agent API)
 
-Proven in the Ferbly project — follow it exactly.
+Proven in the reference project — follow it exactly.
 
 ### 4.1 Session token (server side only)
 
@@ -78,7 +78,7 @@ On open, send:
 ```
 
 - **Inbound (API → speaker):** `reply.audio` messages carry base64 PCM16 at 24 kHz — play them back through the selected output device.
-- **Sample-rate gotcha:** the ReSpeaker hardware runs at **16 kHz**; the protocol is 24 kHz. **Resample capture 16 kHz → 24 kHz** exactly as the Ferbly renderer does. Playback captured at the wrong rate sounds pitched — if the voice sounds wrong, check here first.
+- **Sample-rate gotcha:** the ReSpeaker hardware runs at **16 kHz**; the protocol is 24 kHz. **Resample capture 16 kHz → 24 kHz** exactly as the reference implementation does. Playback captured at the wrong rate sounds pitched — if the voice sounds wrong, check here first.
 
 ### 4.4 Events to handle
 
@@ -160,6 +160,6 @@ Judges score: Multi-Modal Depth · Technical Execution · Usefulness & Impact ·
 ## 10. Guardrails
 
 - **No secrets in the repo** — no key, no token, no `.env`, ever.
-- **Do not modify the Ferbly project or its credential files.** Read-only reference.
+- **Do not modify the reference project or its credential files.** Read-only reference.
 - **Local only.** The app runs from this Mac on localhost. (The voice API is a cloud service — that is expected and already proven.)
 - **Small and robust beats ambitious.** If a feature is not in this guide, it is out of scope.

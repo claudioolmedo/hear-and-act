@@ -2,7 +2,8 @@
 // Run:  node server.js        then open http://localhost:8787
 //
 // The AssemblyAI API key NEVER leaves this machine and is never sent to the
-// browser. This server reads it from the local Ferbly credential store (or
+// browser. This server reads it from the local credential store of the
+// earlier workshop project (or
 // from app/.env) and mints a 60-second session token for the page.
 
 const http = require('http');
@@ -26,13 +27,27 @@ function parseEnvFile(file) {
 
 function loadCreds() {
   const home = os.homedir();
-  const candidates = [
-    path.join(DIR, '.env'),
-    path.join(home, 'Library', 'Application Support', 'Assembly + Ferbly', 'credentials.env'),
-    path.join(home, 'Documents', 'ChatGPT', 'Hardware hackathon - turn a vintage toy into a voice agent', 'furby', '.env'),
-  ];
-  let creds = {};
-  for (const f of candidates) creds = { ...creds, ...parseEnvFile(f) };
+  // Auto-discover the local credential store of the earlier workshop project:
+  // the first credentials file that actually carries both values wins.
+  const found = [];
+  const tryFile = f => {
+    const c = parseEnvFile(f);
+    if (c.ASSEMBLYAI_API_KEY && c.AGENT_ID_MINIMAL) found.push(c);
+  };
+  tryFile(path.join(DIR, '.env'));
+  try {
+    const appSup = path.join(home, 'Library', 'Application Support');
+    for (const d of fs.readdirSync(appSup)) tryFile(path.join(appSup, d, 'credentials.env'));
+  } catch {}
+  try {
+    const base = path.join(home, 'Documents', 'ChatGPT');
+    for (const p of fs.readdirSync(base)) {
+      const proj = path.join(base, p);
+      tryFile(path.join(proj, '.env'));
+      try { for (const s of fs.readdirSync(proj)) tryFile(path.join(proj, s, '.env')); } catch {}
+    }
+  } catch {}
+  let creds = found[0] || {};
   if (process.env.ASSEMBLYAI_API_KEY) creds.ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
   if (process.env.AGENT_ID_MINIMAL) creds.AGENT_ID_MINIMAL = process.env.AGENT_ID_MINIMAL;
   return creds;
@@ -47,7 +62,7 @@ const server = http.createServer(async (req, res) => {
     const creds = loadCreds();
     if (!creds.ASSEMBLYAI_API_KEY || !creds.AGENT_ID_MINIMAL) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Credentials not found. Expected ASSEMBLYAI_API_KEY and AGENT_ID_MINIMAL in app/.env or the Ferbly credential store on this Mac.' }));
+      res.end(JSON.stringify({ error: 'Credentials not found. Expected ASSEMBLYAI_API_KEY and AGENT_ID_MINIMAL in app/.env or the local credential store on this Mac.' }));
       return;
     }
     try {
