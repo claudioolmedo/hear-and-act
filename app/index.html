@@ -42,6 +42,10 @@ const $ = id => document.getElementById(id);
 const statusEl = $('status'), logEl = $('log');
 let ws = null, audioCtx = null, micStream = null, workletNode = null, running = false;
 let playTime = 0, serialPort = null, serialWriter = null;
+// The agent's built-in greeting still carries its old name. For this demo the
+// greeting is presentation, not content: drop its audio and its transcript
+// line, then unmute for the real conversation.
+let shieldGreeting = true, unmuteAt = 0;
 
 const COMMANDS = [
   { re: /\bwave\b/i, action: 'WAVE', serial: 'W' },
@@ -72,6 +76,7 @@ function b64decode(b64) {
 let audioChunks = 0;
 function playPCM(buf) {
   if (!audioCtx) return;
+  if (shieldGreeting || Date.now() < unmuteAt) return;
   if (audioCtx.state === 'suspended') audioCtx.resume();
   const pcm = new Int16Array(buf);
   if (!pcm.length) return;
@@ -161,7 +166,7 @@ async function start() {
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'input.audio', audio: b64encode(e.data) }));
       };
       src.connect(workletNode);
-      running = true; playTime = 0;
+      running = true; playTime = 0; shieldGreeting = true; unmuteAt = 0; audioChunks = 0;
       $('toggle').textContent = '■ Stop';
       setStatus('Listening…');
       logLine('system', 'Session live. Speak a command: wave, turn left, turn right, dance, stop.', 'sys');
@@ -176,6 +181,10 @@ async function start() {
       const text = m.text || m.transcript || '';
       if (type.includes('transcript') && text) {
         if (type.includes('user')) { logLine('you', text, 'user'); checkCommands(text); }
+        else if (shieldGreeting) {
+          shieldGreeting = false;
+          unmuteAt = Date.now() + 1200; // let the greeting's audio tail drain silently
+        }
         else { logLine('hear & act', text, 'agent'); checkCommands(text); setStatus('Listening…'); }
       } else if (type.includes('tool') || type === 'tool.call') {
         const name = (m.name || m.tool || '').toUpperCase();
