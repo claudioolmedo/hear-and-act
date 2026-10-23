@@ -22,7 +22,7 @@ Contact: claudio@claudioolmedo.com · LinkedIn: linkedin.com/in/claudioolmedo-co
 
 **Problem:** Voice agents today can talk — but they can't *do* anything in the real world. The physical world is where help is actually needed.
 
-**Solution: Hear & Act** — a voice-first agent that hears a command, holds a real conversation, understands the intent, and **acts physically**: it drives a servo device, live.
+**Solution: Hear & Act** — think of it as **an open-source Alexa** you can build and teach. A voice-first agent that hears a command, holds a real conversation, understands the intent, and **acts physically**: it drives a servo device, live. Everything is in the open repo.
 
 **Demo:** [EMBED VIDEO — max 2 minutes: speak a command → agent answers by voice → the device moves]
 Repo: https://github.com/claudioolmedo/hear-and-act

@@ -2,6 +2,8 @@
 
 **A voice-first agent that hears a command, understands it, and acts in the physical world.**
 
+Think of it as **an open-source Alexa** — one you can build yourself, teach new things, and connect to real hardware. Everything lives in this repository.
+
 Submission for the **Beta Fund × AWS × OpenAI Multi-Model Hackathon** — AWS Builder Loft, San Francisco, October 23, 2026.
 
 ## The idea
