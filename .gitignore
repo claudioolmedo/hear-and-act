@@ -1,0 +1,14 @@
+# Secrets — NEVER commit credentials
+.env
+.env.*
+credentials.env
+*.key
+
+# Node / build
+node_modules/
+dist/
+out/
+
+# Misc
+*.log
+.DS_Store
