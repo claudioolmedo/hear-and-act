@@ -14,6 +14,12 @@ A person speaks. The agent listens, holds a real conversation, understands the i
 
 It is built for the **Multi-Modal Agents** track: an agent that can hear, reason, and take action across modalities, from voice to the physical world.
 
+## Built with the sponsors
+
+- **AssemblyAI Voice Agent API** — the ears and the voice (the stack proven in the Ferbly project).
+- **Keenable** — the knowledge: live web search for agents, so Hear & Act can answer real questions about the world, not just chat. ($200 in credits claimed at this event.)
+- **Nebius Token Factory** — the inference credits behind the demo ($100 event promo).
+
 ## How it works
 
 ```

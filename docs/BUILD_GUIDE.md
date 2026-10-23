@@ -87,6 +87,13 @@ On open, send:
 - `tool.call` — if the agent ever emits one, treat its name/arguments as an action (see section 5).
 - Session end / errors — surface them visibly; a silent failure kills a live demo.
 
+## 4.5 Sponsor integrations (knowledge + inference)
+
+The demo's sponsor stack — integrate in this order, and **never let them block the core loop** (section 5 must work even if both are skipped):
+
+1. **Keenable — live web knowledge.** Claudio's account (claudio@claudioolmedo.com) holds **$200 in credits (50,000 requests, never expires)** plus 100,000 free monthly requests. The API key lives in his Keenable dashboard (app.keenable.ai → API keys) — Claudio will place it in a local, uncommitted `.env` on this Mac as `KEENABLE_API_KEY` (never commit it, same rule as section 2). Integration: when a final user transcript is a factual question (or contains "search" / "look up"), query the Keenable search API with it and show the top result(s) — title, source, short snippet — in a "Knowledge" panel on the demo screen. If `KEENABLE_API_KEY` is absent, hide the panel silently.
+2. **Nebius Token Factory — inference credits.** A $100 promo code is being delivered to Claudio's email; when redeemed it funds LLM calls on Token Factory's OpenAI-compatible API. This is a credits/billing layer for the project, not a code dependency — do not wire the demo to it today.
+
 ## 5. The action layer
 
 Watch the conversation for action intents, from (in priority order):

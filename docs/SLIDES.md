@@ -28,6 +28,8 @@ Contact: claudio@claudioolmedo.com · LinkedIn: linkedin.com/in/claudioolmedo-co
 Repo: https://github.com/claudioolmedo/hear-and-act
 
 **Modalities used:** voice/audio in → speech understanding + LLM reasoning → synthesized voice out → physical actuation.
+
+**Built with the sponsors:** AssemblyAI (voice agent), Keenable (live web knowledge), Nebius Token Factory (inference credits).
 Built on the AssemblyAI Voice Agent API (the same stack proven in the Ferbly project); local app, real-time WebSocket audio.
 
 ---
