@@ -69,8 +69,12 @@ function b64decode(b64) {
   for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
   return bytes.buffer;
 }
+let audioChunks = 0;
 function playPCM(buf) {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   const pcm = new Int16Array(buf);
+  if (!pcm.length) return;
   const ab = audioCtx.createBuffer(1, pcm.length, 24000);
   const ch = ab.getChannelData(0);
   for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 0x7fff;
@@ -78,6 +82,19 @@ function playPCM(buf) {
   const now = audioCtx.currentTime;
   if (playTime < now) playTime = now + 0.05;
   src.start(playTime); playTime += ab.duration;
+  audioChunks++;
+  if (audioChunks === 1) logLine('system', 'Audio from the agent is arriving and playing ✓ — if you hear nothing, raise the Mac volume and check the 🔊 speaker pick.', 'sys');
+}
+function findAudio(value, depth) {
+  if (!value || depth > 3) return null;
+  if (typeof value === 'string' && value.length > 120 && /^[A-Za-z0-9+/=]+$/.test(value)) return value;
+  if (typeof value === 'object') {
+    for (const k of ['audio', 'data', 'delta', 'chunk', 'payload']) {
+      const hit = findAudio(value[k], depth + 1);
+      if (hit) return hit;
+    }
+  }
+  return null;
 }
 function fireAction(cmd) {
   setStatus('Acting: ' + cmd.action, 'acting');
@@ -149,11 +166,13 @@ async function start() {
       setStatus('Listening…');
       logLine('system', 'Session live. Speak a command: wave, turn left, turn right, dance, stop.', 'sys');
     };
+    ws.binaryType = 'arraybuffer';
     ws.onmessage = e => {
+      if (e.data instanceof ArrayBuffer) { playPCM(e.data); return; }
       let m; try { m = JSON.parse(e.data); } catch { return; }
       const type = m.type || '';
-      const audio = m.audio || (m.delta && m.delta.audio);
-      if (audio && typeof audio === 'string') playPCM(b64decode(audio));
+      const audio = findAudio(m, 0);
+      if (audio) playPCM(b64decode(audio));
       const text = m.text || m.transcript || '';
       if (type.includes('transcript') && text) {
         if (type.includes('user')) { logLine('you', text, 'user'); checkCommands(text); }
