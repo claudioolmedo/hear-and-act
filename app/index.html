@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hear &amp; Act — an open-source Alexa you can build and teach</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: #fff; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 28px 40px 8px; }
+  h1 { font-size: 44px; letter-spacing: 1px; }
+  h1 span { color: #ffc24d; }
+  #status { font-size: 64px; font-weight: 800; padding: 10px 40px 4px; color: #8be28b; min-height: 92px; }
+  #status.thinking { color: #ffc24d; }
+  #status.acting { color: #ff7a59; }
+  #status.error { color: #ff5959; font-size: 34px; }
+  .controls { padding: 8px 40px 18px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  button { font-size: 22px; font-weight: 700; padding: 12px 26px; border-radius: 10px; border: 0; cursor: pointer; }
+  #toggle { background: #ffc24d; color: #000; }
+  #serialBtn { background: #222; color: #fff; border: 1px solid #555; }
+  select { font-size: 18px; padding: 10px; border-radius: 8px; max-width: 340px; }
+  #log { flex: 1; padding: 10px 40px 30px; overflow-y: auto; font-size: 26px; line-height: 1.45; }
+  .user { color: #9fd8ff; } .agent { color: #fff; } .sys { color: #888; font-size: 20px; }
+  .who { font-weight: 800; text-transform: uppercase; font-size: 18px; letter-spacing: 1px; opacity: .75; display: block; }
+  #actuator { position: fixed; inset: 0; display: none; place-items: center; background: #ff7a59; color: #000; z-index: 10; }
+  #actuator div { font-size: 120px; font-weight: 900; letter-spacing: 2px; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+<header><h1>HEAR <span>&amp;</span> ACT</h1></header>
+<div id="status">Ready</div>
+<div class="controls">
+  <button id="toggle">▶ Start</button>
+  <select id="mic"></select>
+  <button id="serialBtn">Connect servo (optional)</button>
+</div>
+<div id="log"></div>
+<div id="actuator"><div id="actuatorText">WAVE</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), logEl = $('log');
+let ws = null, audioCtx = null, micStream = null, workletNode = null, running = false;
+let playTime = 0, serialPort = null, serialWriter = null;
+
+const COMMANDS = [
+  { re: /\bwave\b/i, action: 'WAVE', serial: 'W' },
+  { re: /turn left|left turn/i, action: 'TURN LEFT', serial: 'L' },
+  { re: /turn right|right turn/i, action: 'TURN RIGHT', serial: 'R' },
+  { re: /\bstop\b/i, action: 'STOP', serial: 'S' },
+  { re: /\bdance\b|\bparty\b/i, action: 'DANCE', serial: 'D' },
+];
+
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ''; }
+function logLine(who, text, cls) {
+  const d = document.createElement('div'); d.className = cls || '';
+  d.innerHTML = '<span class="who"></span>';
+  d.querySelector('.who').textContent = who;
+  d.appendChild(document.createTextNode(text));
+  logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+}
+function b64encode(buf) {
+  const bytes = new Uint8Array(buf); let s = '';
+  for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  return btoa(s);
+}
+function b64decode(b64) {
+  const s = atob(b64); const bytes = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes.buffer;
+}
+function playPCM(buf) {
+  const pcm = new Int16Array(buf);
+  const ab = audioCtx.createBuffer(1, pcm.length, 24000);
+  const ch = ab.getChannelData(0);
+  for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 0x7fff;
+  const src = audioCtx.createBufferSource(); src.buffer = ab; src.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  if (playTime < now) playTime = now + 0.05;
+  src.start(playTime); playTime += ab.duration;
+}
+function fireAction(cmd) {
+  setStatus('Acting: ' + cmd.action, 'acting');
+  $('actuatorText').textContent = cmd.action;
+  $('actuator').style.display = 'grid';
+  setTimeout(() => { $('actuator').style.display = 'none'; if (running) setStatus('Listening…'); }, 1400);
+  logLine('action', cmd.action, 'sys');
+  if (serialWriter) {
+    const enc = new TextEncoder();
+    serialWriter.write(enc.encode(cmd.serial + '\n')).catch(() => {});
+  }
+}
+function checkCommands(text) {
+  for (const c of COMMANDS) if (c.re.test(text)) { fireAction(c); return; }
+}
+
+async function listMics() {
+  try {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const mics = devs.filter(d => d.kind === 'audioinput');
+    $('mic').innerHTML = '';
+    mics.forEach((d, i) => {
+      const o = document.createElement('option'); o.value = d.deviceId;
+      o.textContent = d.label || ('Microphone ' + (i + 1));
+      if (/respeaker/i.test(d.label || '')) o.selected = true;
+      $('mic').appendChild(o);
+    });
+  } catch {}
+}
+
+async function start() {
+  setStatus('Connecting…', 'thinking');
+  try {
+    const t = await (await fetch('/token')).json();
+    if (t.error) throw new Error(t.error);
+    audioCtx = new AudioContext();
+    await audioCtx.audioWorklet.addModule('pcm-worklet.js');
+    const devId = $('mic').value;
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: devId ? { deviceId: { exact: devId } } : true });
+    await listMics();
+    ws = new WebSocket('wss://agents.assemblyai.com/v1/ws?token=' + encodeURIComponent(t.token));
+    ws.onopen = async () => {
+      ws.send(JSON.stringify({ type: 'session.update', session: { agent_id: t.agentId } }));
+      const src = audioCtx.createMediaStreamSource(micStream);
+      workletNode = new AudioWorkletNode(audioCtx, 'pcm-capture');
+      workletNode.port.onmessage = e => {
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'input.audio', audio: b64encode(e.data) }));
+      };
+      src.connect(workletNode);
+      running = true; playTime = 0;
+      $('toggle').textContent = '■ Stop';
+      setStatus('Listening…');
+      logLine('system', 'Session live. Speak a command: wave, turn left, turn right, dance, stop.', 'sys');
+    };
+    ws.onmessage = e => {
+      let m; try { m = JSON.parse(e.data); } catch { return; }
+      const type = m.type || '';
+      const audio = m.audio || (m.delta && m.delta.audio);
+      if (audio && typeof audio === 'string') playPCM(b64decode(audio));
+      const text = m.text || m.transcript || '';
+      if (type.includes('transcript') && text) {
+        if (type.includes('user')) { logLine('you', text, 'user'); checkCommands(text); }
+        else { logLine('hear & act', text, 'agent'); checkCommands(text); setStatus('Listening…'); }
+      } else if (type.includes('tool') || type === 'tool.call') {
+        const name = (m.name || m.tool || '').toUpperCase();
+        for (const c of COMMANDS) if (name.includes(c.action.split(' ')[0])) fireAction(c);
+      } else if (type.includes('reply') && text) {
+        logLine('hear & act', text, 'agent');
+      }
+    };
+    ws.onclose = () => { if (running) stop('Session closed'); };
+    ws.onerror = () => setStatus('Connection error', 'error');
+  } catch (err) {
+    setStatus('Error: ' + err.message, 'error');
+  }
+}
+function stop(msg) {
+  running = false;
+  $('toggle').textContent = '▶ Start';
+  try { ws && ws.close(); } catch {}
+  try { micStream && micStream.getTracks().forEach(t => t.stop()); } catch {}
+  try { audioCtx && audioCtx.close(); } catch {}
+  ws = null; setStatus(msg || 'Ready');
+}
+$('toggle').onclick = () => running ? stop() : start();
+$('serialBtn').onclick = async () => {
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 9600 });
+    serialWriter = serialPort.writable.getWriter();
+    $('serialBtn').textContent = 'Servo connected ✓';
+  } catch { $('serialBtn').textContent = 'Connect servo (optional)'; }
+};
+listMics();
+</script>
+</body>
+</html>

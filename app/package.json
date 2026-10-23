@@ -1,0 +1,1 @@
+{"description":"Hear & Act local demo app — zero dependencies, Node 18+","name":"hear-and-act-app","private":true,"scripts":{"start":"node server.js"},"version":"1.0.0"}

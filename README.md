@@ -38,7 +38,7 @@ Microphone (ReSpeaker XVF3800 array, or any mic)
 
 - [x] Concept and architecture
 - [x] Voice agent already proven (Ferbly project, AssemblyAI workshop)
-- [ ] Local app built in this repo (in progress — see `docs/CODEX_BRIEF.md`)
+- [x] Local app built in this repo (`app/` — ready to run, see `app/README.md`)
 - [ ] Action layer wired to the demo device
 - [ ] Demo rehearsed and recorded (backup video)
 
