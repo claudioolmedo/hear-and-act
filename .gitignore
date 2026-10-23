@@ -12,3 +12,4 @@ out/
 # Misc
 *.log
 .DS_Store
+.hear-act-agent.json

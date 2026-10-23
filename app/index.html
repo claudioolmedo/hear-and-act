@@ -146,6 +146,31 @@ async function applySpeaker() {
   } catch {}
 }
 
+// Live web search (Keenable, via the local server) whenever the user asks a
+// question out loud — results land in the log so the room can see the
+// knowledge layer working.
+let searching = false;
+async function maybeSearch(text) {
+  const q = (text || '').trim();
+  if (searching || q.length < 8) return;
+  if (!/\?|\b(what|who|when|where|why|how|which|search|look up|find out|news|weather)\b/i.test(q)) return;
+  searching = true;
+  setStatus('Searching the web…', 'thinking');
+  logLine('🔎 keenable', 'Searching the live web for: ' + q, 'sys');
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 10000);
+    const r = await fetch('/search?q=' + encodeURIComponent(q), { signal: ctl.signal });
+    const j = await r.json();
+    const top = (j.results || [])[0];
+    if (top) {
+      logLine('🔎 keenable', top.title + ' — ' + top.snippet, 'agent');
+      if (top.url) logLine('🔎 source', top.url, 'sys');
+    } else logLine('🔎 keenable', 'No results came back.', 'sys');
+  } catch { logLine('🔎 keenable', 'Search did not answer in time.', 'sys'); }
+  searching = false;
+  if (running) setStatus('Listening…');
+}
+
 async function start() {
   setStatus('Connecting…', 'thinking');
   try {
@@ -166,7 +191,7 @@ async function start() {
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'input.audio', audio: b64encode(e.data) }));
       };
       src.connect(workletNode);
-      running = true; playTime = 0; shieldGreeting = true; unmuteAt = 0; audioChunks = 0;
+      running = true; playTime = 0; shieldGreeting = !t.renamed; unmuteAt = 0; audioChunks = 0;
       $('toggle').textContent = '■ Stop';
       setStatus('Listening…');
       logLine('system', 'Session live. Speak a command: wave, turn left, turn right, dance, stop.', 'sys');
@@ -180,10 +205,10 @@ async function start() {
       if (audio) playPCM(b64decode(audio));
       const text = m.text || m.transcript || '';
       if (type.includes('transcript') && text) {
-        if (type.includes('user')) { logLine('you', text, 'user'); checkCommands(text); }
-        else if (shieldGreeting) {
+        if (type.includes('user')) { logLine('you', text, 'user'); checkCommands(text); maybeSearch(text); }
+        else if (shieldGreeting && /ferbly/i.test(text)) {
           shieldGreeting = false;
-          unmuteAt = Date.now() + 1200; // let the greeting's audio tail drain silently
+          unmuteAt = Date.now() + 1200; // let the old greeting's audio tail drain silently
         }
         else { logLine('hear & act', text, 'agent'); checkCommands(text); setStatus('Listening…'); }
       } else if (type.includes('tool') || type === 'tool.call') {
