@@ -38,7 +38,7 @@ Microphone (ReSpeaker XVF3800 array, or any mic)
 
 ## Running it
 
-Setup and run instructions land here as the app is built (see `app/`).
+For the builder: start with `docs/CODEX_BRIEF.md` (the job) and `docs/BUILD_GUIDE.md` (the full spec — hardware, protocol, demo script). Run instructions land in `app/README.md` as the app is built.
 
 Credentials: the app reads `ASSEMBLYAI_API_KEY` from a local env file on the build machine (same credential store as the Ferbly project). Never commit `.env` or `credentials.env` — they are git-ignored.
 

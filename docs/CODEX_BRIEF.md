@@ -2,6 +2,8 @@
 
 **One job:** in this repository, build the local app that runs the Hear & Act demo end-to-end on this Mac, following the architecture in `README.md` and the rules below. When it works, stop and report (see "Report back").
 
+**Full specification: `docs/BUILD_GUIDE.md`** — hardware, credential locations, the exact API protocol, the action layer, the demo script and troubleshooting. Read it before writing code; this brief is the summary, the guide is the source of truth.
+
 ## What to build
 
 A local app (browser app served by a tiny local server is preferred — fastest to run and demo) that:
